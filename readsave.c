@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 int readSave(char *savFile, SaveInfo *info, VariableList *variables)
 {
@@ -329,6 +330,7 @@ int readVariable(char *bytes, long nBytes, long *offset, VariableList *variables
         {
             tmp = &(((Variable*)var->data)[i]);
             status = copyStructure(tmp, &structDefinition);
+            tmp->isArray=false;
             if (status != 0)
                 return status;
         }
@@ -673,7 +675,6 @@ int initStructure(char *bytes, long nBytes, long *offset, Variable *variable)
             status = initArray(bytes, nBytes, offset, var);
             if (status != 0)
                 return status;
-            var->isArray = true;
         }
     }
 
@@ -683,11 +684,11 @@ int initStructure(char *bytes, long nBytes, long *offset, Variable *variable)
         var = &((Variable*)variable->data)[i];
         if ((var->flags & 0x20) != 0)
         {
-            var->isArray = true;
             var->isStructure = true;
             status = initStructure(bytes, nBytes, offset, var);
             if (status != 0)
                 return status;
+            var->isArray = false;
         }
     }
 
@@ -764,6 +765,8 @@ int summarizeStructure(Variable *variable, int indent)
     if (variable == NULL || !variable->isStructure)
         return READSAVE_ARGUMENTS;
 
+    char typeName[255] = {0};
+
     Variable *tag = NULL;
     for (int i = 0; i < variable->structInfo.nTags; i++)
     {
@@ -778,7 +781,8 @@ int summarizeStructure(Variable *variable, int indent)
         }
         else if (tag->isArray)
         {
-            fprintf(stdout, " array(");
+            dataTypeName(tag->dataType, typeName);
+            fprintf(stdout, " %s array(", typeName);
             for (int d = 0; d < tag->arrayInfo.nDims; d++)
             {
                 fprintf(stdout, "%ld", tag->arrayInfo.dims[d]);
@@ -789,46 +793,48 @@ int summarizeStructure(Variable *variable, int indent)
         }
         else
         {
+            dataTypeName(tag->dataType, typeName);
+            fprintf(stdout, " %s", typeName);
             switch(tag->dataType)
             {
                 case DataTypeString:
-                    fprintf(stdout, " (string) \"%s\"\n", (char*)(tag->data));
+                    fprintf(stdout, " \"%s\"\n", (char*)(tag->data));
                     break;
                 case DataTypeByte:
-                    fprintf(stdout, " (byte) %d\n", *(char*)(tag->data));
+                    fprintf(stdout, " %d\n", *(char*)(tag->data));
                     break;
                 case DataTypeInt16:
-                    fprintf(stdout, " (int16) %d\n", *(int16_t*)(tag->data));
+                    fprintf(stdout, " %d\n", *(int16_t*)(tag->data));
                     break;
                 case DataTypeUInt16:
-                    fprintf(stdout, " (uint16) %u\n", *(uint16_t*)(tag->data));
+                    fprintf(stdout, " %u\n", *(uint16_t*)(tag->data));
                     break;
                 case DataTypeInt32:
-                    fprintf(stdout, " (int32) %d\n", *(int32_t*)(tag->data));
+                    fprintf(stdout, " %d\n", *(int32_t*)(tag->data));
                     break;
                 case DataTypeUInt32:
-                    fprintf(stdout, " (uint32) %u\n", *(uint32_t*)(tag->data));
+                    fprintf(stdout, " %u\n", *(uint32_t*)(tag->data));
                     break;
                 case DataTypeInt64:
-                    fprintf(stdout, " (int64) %ld\n", *(int64_t*)(tag->data));
+                    fprintf(stdout, " %ld\n", *(int64_t*)(tag->data));
                     break;
                 case DataTypeUInt64:
-                    fprintf(stdout, " (uint64) %lu\n", *(uint64_t*)(tag->data));
+                    fprintf(stdout, " %lu\n", *(uint64_t*)(tag->data));
                     break;
                 case DataTypeFloat:
-                    fprintf(stdout, " (float) %f\n", *(float*)(tag->data));
+                    fprintf(stdout, " %f\n", *(float*)(tag->data));
                     break;
                 case DataTypeDouble:
-                    fprintf(stdout, " (double) %lf\n", *(double*)(tag->data));
+                    fprintf(stdout, " %lf\n", *(double*)(tag->data));
                     break;
                 case DataTypeComplexFloat:
-                    fprintf(stdout, " (complex float)\n");
+                    fprintf(stdout, "\n");
                     break;
                 case DataTypeComplexDouble:
-                    fprintf(stdout, " (complex double)\n");
+                    fprintf(stdout, "\n");
                     break;
                 default:
-                    fprintf(stdout, " (scalar)\n");
+                    fprintf(stdout, "\n");
             }
         }
     }
@@ -953,35 +959,179 @@ int summarizeVariables(VariableList *variables)
     for (int i = 0; i < variables->nVariables; i++)
     {
         var = &(variables->variableList[i]);
-        if (var->isScalar)
-            fprintf(stdout, "%s (scalar)\n", var->name);
-        else if (var->isArray)
-        {
-            if (!var->isStructure)
-            {
-                fprintf(stdout, "%s (array(", var->name);
-                for (int d = 0; d < var->arrayInfo.nDims; d++)
-                {
-                    fprintf(stdout, "%ld", var->arrayInfo.dims[d]);
-                    if (d < var->arrayInfo.nDims - 1)
-                        fprintf(stdout, ",");
-                }
-                fprintf(stdout, "))\n");
-            }
-            else
-            {
-                for (int s = 0; s < var->arrayInfo.nElements; s++)
-                {
-                    fprintf(stdout, "%s[%d] (structure)\n", var->name, s);
-                    Variable *e = &(((Variable*)(var->data))[s]);
-                    summarizeStructure(e, 2);
-                }
-
-            }
-        }
-        else
-            fprintf(stdout, " (no information)\n");
+        summarizeVariable(var);
     }
 
     return READSAVE_OK;
+
+}
+
+int summarizeVariable(Variable *var)
+{
+    if (var == NULL)
+        return READSAVE_ARGUMENTS;
+
+    int status = READSAVE_OK;
+
+    char typeName[255] = {0};
+
+    // Array holding structures of the same kind
+    if (var->isStructure && var->isArray)
+    {
+        for (int i = 0; i < var->arrayInfo.nElements; i++)
+        {
+            status = summarizeVariable(&((Variable*)var->data)[i]);
+            if (status != 0)
+                return status;
+        }
+        return status;        
+    }
+
+    if (var->isScalar)
+    {
+        dataTypeName(var->dataType, typeName);
+        fprintf(stdout, "%s (%s scalar)\n", var->name, typeName);
+    }
+    else if (var->isStructure)
+    {
+        fprintf(stdout, "%s (structure)\n", var->name);
+        summarizeStructure(var, 2);
+    }
+    else if (var->isArray)
+    {
+        dataTypeName(var->dataType, typeName);
+        fprintf(stdout, "%s (%s array(", var->name, typeName);
+        for (int d = 0; d < var->arrayInfo.nDims; d++)
+        {
+            fprintf(stdout, "%ld", var->arrayInfo.dims[d]);
+            if (d < var->arrayInfo.nDims - 1)
+                fprintf(stdout, ",");
+        }
+        fprintf(stdout, "))\n");
+    }
+    else
+        fprintf(stdout, " (no information)\n");
+
+    return READSAVE_OK;
+}
+
+Variable * variableData(Variable *variable, char *dottedTagName)
+{
+    if (variable == NULL || dottedTagName == NULL)
+        return NULL;
+
+    if (!variable->isStructure || variable->structInfo.nTags == 0 || variable->data == NULL)
+        return NULL;
+
+    Variable *var = variable;
+
+    char *requestedTag = strdup(dottedTagName);
+    if (requestedTag == NULL)
+        return NULL;
+
+    for (int i = 0; i < strlen(requestedTag); i++)
+        requestedTag[i] = toupper(requestedTag[i]);
+
+    // Adapted from the strsep manual page example:
+    char **ap = NULL;
+    char *tagFields[42] = {0};
+    int nRequestedTags = 0;
+    for (ap = tagFields; (*ap = strsep(&requestedTag, ".")) != NULL;)
+    {
+        if (**ap != 0)
+        {
+            nRequestedTags++;
+            if (++ap >= &tagFields[42])
+                break;
+        }
+    }
+
+    if (strcmp(tagFields[0], var->name) != 0)
+        return NULL;
+
+    if (nRequestedTags == 1)
+        return var;
+
+    int depth = 1;
+    Variable *tag = NULL;
+    int i = 0;
+    long nTags = var->structInfo.nTags;
+    for (i = 0; i < nTags; i++)
+    {
+        tag = &((Variable*)var->data)[i];
+        if (strcmp(tagFields[depth], tag->name) == 0)
+        {
+            depth++;
+            if (depth == nRequestedTags)
+                return tag;
+            if (!tag->isStructure)
+                return NULL;
+            var = tag;
+            i = 0;
+            nTags = var->structInfo.nTags;
+        }
+        
+    }
+
+    return NULL;
+
+}
+
+void dataTypeName(long dataType, char *name)
+{
+    if (name == NULL)
+        return;
+
+    switch (dataType)
+    {
+        case DataTypeByte:
+            sprintf(name, "%s", "<s8>");
+            break;
+        case DataTypeInt16:
+            sprintf(name, "%s", "<s16>");
+            break;
+        case DataTypeUInt16:
+            sprintf(name, "%s", "<u16>");
+            break;
+        case DataTypeInt32:
+            sprintf(name, "%s", "<s32>");
+            break;
+        case DataTypeUInt32:
+            sprintf(name, "%s", "<u32>");
+            break;
+        case DataTypeInt64:
+            sprintf(name, "%s", "<s64>");
+            break;
+        case DataTypeUInt64:
+            sprintf(name, "%s", "<u64>");
+            break;
+        case DataTypeFloat:
+            sprintf(name, "%s", "<float>");
+            break;
+        case DataTypeDouble:
+            sprintf(name, "%s", "<double>");
+            break;
+        case DataTypeComplexFloat:
+            sprintf(name, "%s", "<complex-float>");
+            break;
+        case DataTypeComplexDouble:
+            sprintf(name, "%s", "<complex-double>");
+            break;
+        case DataTypeString:
+            sprintf(name, "%s", "<string>");
+            break;
+        case DataTypeStructure:
+            sprintf(name, "%s", "<structure>");
+            break;
+        case DataTypeHeapPointer:
+            sprintf(name, "%s", "<heap-pointer>");
+            break;
+        case DataTypeObjectReference:
+            sprintf(name, "%s", "<obj-ref>");
+            break;
+        break;
+            sprintf(name, "%s", "<?>");
+    }
+    
+    return;
 }

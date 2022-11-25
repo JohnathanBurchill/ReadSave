@@ -30,7 +30,8 @@ int main(int argc, char **argv)
     int status = 0;
 
     int nOptions = 0;
-    bool showVariables = false;
+    bool summarize = false;
+    char *variableName = NULL;
 
     for (int i = 0; i < argc; i++)
     {
@@ -47,7 +48,17 @@ int main(int argc, char **argv)
         else if (strcmp(argv[i], "--variable-summary") == 0)
         {
             nOptions++;
-            showVariables = true;
+            summarize = true;
+        }
+        else if (strncmp(argv[i], "--variable=", 11) == 0)
+        {
+            if (strlen(argv[i]) == 11)
+            {
+                fprintf(stderr, "Missing variable name for %s\n", argv[i]);
+                return EXIT_FAILURE;
+            }
+            nOptions++;
+            variableName = argv[i] + 11;
         }
         else if (strncmp(argv[i], "--", 2) == 0)
         {
@@ -76,10 +87,44 @@ int main(int argc, char **argv)
 
     fprintf(stdout, "SAV file created %s by %s.\n", fileInfo.date, fileInfo.operator);
 
+    Variable *var = NULL;
+    Variable *selectedVar = NULL;
+    if (summarize)
+    {
+        if (variableName == NULL)
+        {
+            fprintf(stdout, "Variables:\n");
+            for (int i = 0; i < variables.nVariables; i++)
+                fprintf(stdout, " %s\n", variables.variableList[i].name);
+        }
+        else
+            for (int i = 0; i < variables.nVariables; i++)
+            {
+                var = &variables.variableList[i];
+                if (var->isArray && var->isStructure)
+                {
+                    for (int v = 0; v < var->arrayInfo.nElements; v++)
+                    {
+                        selectedVar = variableData(&((Variable*)var->data)[i], variableName);
+                        if (selectedVar != NULL)
+                        {
+                            summarizeVariable(selectedVar);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    selectedVar = variableData(var, variableName);
+                    if (selectedVar != NULL)
+                    {
+                        summarizeVariable(selectedVar);
+                        break;
+                    }
+                }
 
-    if (showVariables)
-        summarizeVariables(&variables);
-
+            }
+    }
     // Other things to do
 
     return EXIT_SUCCESS;
@@ -88,12 +133,14 @@ int main(int argc, char **argv)
 
 void usage(char *name)
 {
-    fprintf(stdout, "Usage: %s <file.sav> [--variable-summary] [--help] [--about]\n", name);
+    fprintf(stdout, "Usage: %s <file.sav> [--variable-summary] [--variable=<variableName[.tag1][.tag2]...>] [--help] [--about]\n", name);
     fprintf(stdout, "Reads an IDL save file.\n");
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "%20s : summary of save file variables.\n", "--variable-summary");
     fprintf(stdout, "%20s : this summary\n", "--help");
     fprintf(stdout, "%20s : author and license information\n", "--about");
+    fprintf(stdout, "%s\n", "--variable=<variableName[.tag1][.tag2]...>");
+    fprintf(stdout, "%s : operate on variableName, with optional structures tags tag1, tag2, etc., e.g., --variable=SKYMAP.PROJECT_UID\n", "");
     return;
 }
 

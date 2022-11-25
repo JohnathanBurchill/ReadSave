@@ -156,6 +156,9 @@ int copyStructureInfo(StructureInfo *dst, StructureInfo *src);
 int readStructure(char *bytes, long nBytes, long *offset, Variable *variable);
 
 int summarizeVariables(VariableList *variables);
+int summarizeVariable(Variable *var);
 int summarizeStructure(Variable *variable, int indent);
+Variable * variableData(Variable *variable, char *dottedTagName);
+void dataTypeName(long dataType, char *name);
 
 #endif // _READSAVE_H
