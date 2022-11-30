@@ -128,7 +128,6 @@ int readSave(char *savFile, SaveInfo *info, VariableList *variables)
                 break;
 
             case RecordTypeVariable:
-	printf("here\n");
                 status = readVariable(bytes, nBytes, &offset, variables);
                 if (status != 0)
                     goto cleanup;
