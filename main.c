@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 int main(int argc, char **argv)
 {
@@ -126,6 +127,106 @@ int main(int argc, char **argv)
             }
     }
     // Other things to do
+
+    bool extract = true;
+    if (extract)
+    {
+        for (int i = 0; i < variables.nVariables; i++)
+        {
+            var = &variables.variableList[i];
+            if (var->isArray && var->isStructure)
+            {
+                for (int v = 0; v < 1; v++)
+                {
+                    selectedVar = variableData(&((Variable*)var->data)[v], variableName);
+                }
+            }
+            else
+            {
+                selectedVar = variableData(var, variableName);
+                if (selectedVar != NULL)
+                {
+                    summarizeVariable(selectedVar);
+                    break;
+                }
+            }
+            if (selectedVar != NULL)
+            {
+                void *data = selectedVar->data;
+                if (selectedVar->arrayInfo.nElements == 0)
+                {
+                    switch(selectedVar->dataType)
+                    {
+                        case DataTypeByte:
+                            printf("%d\n", *(uint8_t*)data);
+                            break;
+                        case DataTypeInt16:
+                            printf("%d\n", *(int16_t*)data);
+                            break;
+                        case DataTypeUInt16:
+                            printf("%u\n", *(uint16_t*)data);
+                            break;
+                        case DataTypeInt32:
+                            printf("%d\n", *(int32_t*)data);
+                            break;
+                        case DataTypeUInt32:
+                            printf("%u\n", *(uint32_t*)data);
+                            break;
+                        case DataTypeInt64:
+                            printf("%ld\n", *(int64_t*)data);
+                            break;
+                        case DataTypeUInt64:
+                            printf("%ld\n", *(uint64_t*)data);
+                            break;
+                        case DataTypeFloat:
+                            printf("%f\n", *(float*)data);
+                            break;
+                        case DataTypeDouble:
+                            printf("%lf\n", *(double*)data);
+                            break;
+                        default:
+                    }
+
+                }
+                else
+                    for (int i = 0; i < selectedVar->arrayInfo.nElements; i++)
+                    {
+                        switch(selectedVar->dataType)
+                        {
+                            case DataTypeByte:
+                                printf("%d\n", ((uint8_t*)data)[i]);
+                                break;
+                            case DataTypeInt16:
+                                printf("%d\n", ((int16_t*)data)[i]);
+                                break;
+                            case DataTypeUInt16:
+                                printf("%u\n", ((uint16_t*)data)[i]);
+                                break;
+                            case DataTypeInt32:
+                                printf("%d\n", ((int32_t*)data)[i]);
+                                break;
+                            case DataTypeUInt32:
+                                printf("%u\n", ((uint32_t*)data)[i]);
+                                break;
+                            case DataTypeInt64:
+                                printf("%ld\n", ((int64_t*)data)[i]);
+                                break;
+                            case DataTypeUInt64:
+                                printf("%ld\n", ((uint64_t*)data)[i]);
+                                break;
+                            case DataTypeFloat:
+                                printf("%f\n", ((float*)data)[i]);
+                                break;
+                            case DataTypeDouble:
+                                printf("%lf\n", ((double*)data)[i]);
+                                break;
+                            default:
+                        }
+                    }
+            }
+        }
+
+    }
 
     return EXIT_SUCCESS;
 
