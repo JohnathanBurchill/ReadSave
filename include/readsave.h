@@ -137,23 +137,23 @@ enum ReadSave
 
 int readSave(char *filename, SaveInfo *info, VariableList *variables);
 
-int readString(char *bytes, long nBytes, long *offset, char **str);
-float readFloat(char *bytes, long nBytes, long *offset);
-double readDouble(char *bytes, long nBytes, long *offset);
-long readLong(char *bytes, long nBytes, long *offset);
-unsigned long readULong(char *bytes, long nBytes, long *offset);
-short readShort(char *bytes, long nBytes, long *offset);
-unsigned short readUShort(char *bytes, long nBytes, long *offset);
-unsigned char readByte(char *bytes, long nBytes, long *offset);
+int readString(unsigned char *bytes, long nBytes, long *offset, char **str);
+float readFloat(unsigned char *bytes, long nBytes, long *offset);
+double readDouble(unsigned char *bytes, long nBytes, long *offset);
+long readLong(unsigned char *bytes, long nBytes, long *offset);
+unsigned long readULong(unsigned char *bytes, long nBytes, long *offset);
+short readShort(unsigned char *bytes, long nBytes, long *offset);
+unsigned short readUShort(unsigned char *bytes, long nBytes, long *offset);
+unsigned char readByte(unsigned char *bytes, long nBytes, long *offset);
 
-int readVariable(char *bytes, long nBytes, long *offset, VariableList *variables);
-int readScalar(char *bytes, long nBytes, long *offset, Variable *var);
-int initArray(char *bytes, long nBytes, long *offset, Variable *var);
-int readArray(char *bytes, long nBytes, long *offset, Variable *var);
-int initStructure(char *bytes, long nBytes, long *offset, Variable *variable);
+int readVariable(unsigned char *bytes, long nBytes, long *offset, VariableList *variables);
+int readScalar(unsigned char *bytes, long nBytes, long *offset, Variable *var);
+int initArray(unsigned char *bytes, long nBytes, long *offset, Variable *var);
+int readArray(unsigned char *bytes, long nBytes, long *offset, Variable *var);
+int initStructure(unsigned char *bytes, long nBytes, long *offset, Variable *variable);
 int copyStructure(Variable *dst, Variable *src);
 int copyStructureInfo(StructureInfo *dst, StructureInfo *src);
-int readStructure(char *bytes, long nBytes, long *offset, Variable *variable);
+int readStructure(unsigned char *bytes, long nBytes, long *offset, Variable *variable);
 
 int summarizeVariables(VariableList *variables);
 int summarizeVariable(Variable *var);

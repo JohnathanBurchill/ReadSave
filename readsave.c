@@ -44,7 +44,7 @@ int readSave(char *savFile, SaveInfo *info, VariableList *variables)
     if (f == NULL)
         return READSAVE_INPUT_FILE;
 
-    char *bytes = calloc(fileInfo.st_size, 1);
+    unsigned char *bytes = calloc(fileInfo.st_size, 1);
     if (bytes == NULL)
     {
         fclose(f);
@@ -128,6 +128,7 @@ int readSave(char *savFile, SaveInfo *info, VariableList *variables)
                 break;
 
             case RecordTypeVariable:
+	printf("here\n");
                 status = readVariable(bytes, nBytes, &offset, variables);
                 if (status != 0)
                     goto cleanup;
@@ -165,10 +166,10 @@ void about(void)
     return;
 }
 
-int readString(char *bytes, long nBytes, long *offset, char **str)
+int readString(unsigned char *bytes, long nBytes, long *offset, char **str)
 {
     long strLength = readLong(bytes, nBytes, offset);
-    *str = strndup((char *)(bytes + *offset), (unsigned int) strLength);
+    *str = strndup((unsigned char *)(bytes + *offset), (unsigned int) strLength);
     if (*str == NULL)
         return READSAVE_MEM;
     long padded = 0;
@@ -179,11 +180,11 @@ int readString(char *bytes, long nBytes, long *offset, char **str)
 
 }
 
-float readFloat(char *bytes, long nBytes, long *offset)
+float readFloat(unsigned char *bytes, long nBytes, long *offset)
 {
     if (offset != NULL && bytes != NULL && *offset < nBytes - 3)
     {
-        char f[4] = {0};
+        unsigned char f[4] = {0};
         for (int i = 0; i < 4; i++)
             f[i] = bytes[*offset + 3 - i];
 
@@ -195,11 +196,11 @@ float readFloat(char *bytes, long nBytes, long *offset)
         return 0;
 }
 
-double readDouble(char *bytes, long nBytes, long *offset)
+double readDouble(unsigned char *bytes, long nBytes, long *offset)
 {
     if (offset != NULL && bytes != NULL && *offset < nBytes - 3)
     {
-        char f[8] = {0};
+        unsigned char f[8] = {0};
         for (int i = 0; i < 8; i++)
             f[i] = bytes[*offset + 7 - i];
 
@@ -211,7 +212,7 @@ double readDouble(char *bytes, long nBytes, long *offset)
         return 0;
 }
 
-long readLong(char *bytes, long nBytes, long *offset)
+long readLong(unsigned char *bytes, long nBytes, long *offset)
 {
     if (offset != NULL && bytes != NULL && *offset < nBytes - 3)
     {
@@ -223,7 +224,7 @@ long readLong(char *bytes, long nBytes, long *offset)
         return 0;
 }
 
-unsigned long readULong(char *bytes, long nBytes, long *offset)
+unsigned long readULong(unsigned char *bytes, long nBytes, long *offset)
 {
     if (offset != NULL && bytes != NULL && *offset < nBytes)
     {
@@ -235,7 +236,7 @@ unsigned long readULong(char *bytes, long nBytes, long *offset)
         return 0;
 }
 
-short readShort(char *bytes, long nBytes, long *offset)
+short readShort(unsigned char *bytes, long nBytes, long *offset)
 {
     if (offset != NULL && bytes != NULL && *offset < nBytes)
     {
@@ -247,7 +248,7 @@ short readShort(char *bytes, long nBytes, long *offset)
         return 0;
 }
 
-unsigned short readUShort(char *bytes, long nBytes, long *offset)
+unsigned short readUShort(unsigned char *bytes, long nBytes, long *offset)
 {
     if (offset != NULL && bytes != NULL && *offset < nBytes)
     {
@@ -259,7 +260,7 @@ unsigned short readUShort(char *bytes, long nBytes, long *offset)
         return 0;
 }
 
-unsigned char readByte(char *bytes, long nBytes, long *offset)
+unsigned char readByte(unsigned char *bytes, long nBytes, long *offset)
 {
     if (offset != NULL && bytes != NULL && *offset < nBytes)
     {
@@ -272,7 +273,7 @@ unsigned char readByte(char *bytes, long nBytes, long *offset)
         return 0;
 }
 
-int readVariable(char *bytes, long nBytes, long *offset, VariableList *variables)
+int readVariable(unsigned char *bytes, long nBytes, long *offset, VariableList *variables)
 {
     void *mem = realloc(variables->variableList, sizeof(Variable)*(variables->nVariables + 1));
     if (mem == NULL)
@@ -376,7 +377,7 @@ int readVariable(char *bytes, long nBytes, long *offset, VariableList *variables
 
 }
 
-int readScalar(char *bytes, long nBytes, long *offset, Variable *var)
+int readScalar(unsigned char *bytes, long nBytes, long *offset, Variable *var)
 {
     if (offset == NULL || bytes == NULL || *offset >= nBytes || var == NULL)
         return READSAVE_ARGUMENTS;
@@ -461,7 +462,7 @@ int readScalar(char *bytes, long nBytes, long *offset, Variable *var)
     return 0;
 }
 
-int initArray(char *bytes, long nBytes, long *offset, Variable *var)
+int initArray(unsigned char *bytes, long nBytes, long *offset, Variable *var)
 {
     if (offset == NULL || bytes == NULL || *offset >= nBytes || var == NULL)
         return READSAVE_ARGUMENTS;
@@ -497,18 +498,18 @@ int initArray(char *bytes, long nBytes, long *offset, Variable *var)
     return READSAVE_OK;
 }
 
-int readArray(char *bytes, long nBytes, long *offset, Variable *var)
+int readArray(unsigned char *bytes, long nBytes, long *offset, Variable *var)
 {
     if (offset == NULL || bytes == NULL || *offset >= nBytes || var == NULL)
         return READSAVE_ARGUMENTS;
 
-    char b[16] = {0};
+    unsigned char b[16] = {0};
     long redundant = 0;
     switch(var->dataType)
     {
         case DataTypeByte:
             redundant = readLong(bytes, nBytes, offset);
-            memcpy((char*)var->data, bytes + *offset, var->arrayInfo.nElements * var->arrayInfo.nBytesPerElement);
+            memcpy((unsigned char*)var->data, bytes + *offset, var->arrayInfo.nElements * var->arrayInfo.nBytesPerElement);
             *offset += var->arrayInfo.nElements * var->arrayInfo.nBytesPerElement;
             while (*offset % 4 != 0)
                 *offset += 1; // Next 32-bit boundary
@@ -610,7 +611,7 @@ int readArray(char *bytes, long nBytes, long *offset, Variable *var)
     return 0;
 }
 
-int initStructure(char *bytes, long nBytes, long *offset, Variable *variable)
+int initStructure(unsigned char *bytes, long nBytes, long *offset, Variable *variable)
 {
     if (bytes == NULL || offset == NULL || *offset >= nBytes || variable == NULL)
         return READSAVE_ARGUMENTS;
@@ -725,7 +726,7 @@ int initStructure(char *bytes, long nBytes, long *offset, Variable *variable)
     return READSAVE_OK;
 }
 
-int readStructure(char *bytes, long nBytes, long *offset, Variable *var)
+int readStructure(unsigned char *bytes, long nBytes, long *offset, Variable *var)
 {
     if (bytes == NULL || offset == NULL || *offset >= nBytes || var == NULL)
         return READSAVE_ARGUMENTS;
@@ -801,7 +802,7 @@ int summarizeStructure(Variable *variable, int indent)
                     fprintf(stdout, " \"%s\"\n", (char*)(tag->data));
                     break;
                 case DataTypeByte:
-                    fprintf(stdout, " %d\n", *(char*)(tag->data));
+                    fprintf(stdout, " %d\n", *(unsigned char*)(tag->data));
                     break;
                 case DataTypeInt16:
                     fprintf(stdout, " %d\n", *(int16_t*)(tag->data));
