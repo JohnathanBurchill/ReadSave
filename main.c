@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     char *savFile = argv[1];
     if (strcmp(savFile + strlen(savFile)-4, ".sav") != 0)
     {
-        fprintf(stderr, "Expected a save file with extension .sav.\n");
+        fprintf(stderr, "Expected first argument to be a save file with extension .sav.\n");
         return EXIT_FAILURE;
     }
 
