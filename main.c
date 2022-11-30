@@ -228,6 +228,8 @@ int main(int argc, char **argv)
 
     }
 
+    // TODO ReadSave needs a comprehensive memory free on VariableList variables.
+
     return EXIT_SUCCESS;
 
 }
