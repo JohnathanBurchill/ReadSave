@@ -1,4 +1,6 @@
-# ReadSave: CMakeLists.txt
+#!/bin/bash
+
+# ReadSave: Docker/docker-build.txt
 
 # Copyright (C) 2022  Johnathan K Burchill
 
@@ -16,29 +18,5 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-PROJECT(ReadSave)
+docker build --target build -t johnathanburchill/readsav:build --no-cache .
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.3)
-
-ADD_DEFINITIONS(-DHAVE_GETOPT_H)
-
-if(CMAKE_BUILD_TYPE STREQUAL Debug)
-    message( "-- Debugging enabled")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg -std=gnu99 ")
-else (CMAKE_BUILD_TYPE STREQUAL Debug)
-    message( "-- Optimization enabled")
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -std=gnu99 ")
-endif(CMAKE_BUILD_TYPE STREQUAL Debug)
-
-INCLUDE_DIRECTORIES(include)
-
-SET(LIBS ${LIBS})
-
-INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
-
-ADD_LIBRARY(redsafe readsave.c)
-
-ADD_EXECUTABLE(readsave main.c)
-TARGET_LINK_LIBRARIES(readsave -static redsafe)
-
-install(TARGETS readsave DESTINATION $ENV{HOME}/bin)
