@@ -18,5 +18,5 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-docker build -t readsave .
+docker build --target dev -t readsave --no-cache .
 

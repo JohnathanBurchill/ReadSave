@@ -1,5 +1,11 @@
 build
 example
+.devcontainer
+.gitconfig
+.local
+.ssh
+.viminfo
+.vscode-server
 
 # Prerequisites
 *.d

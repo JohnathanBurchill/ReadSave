@@ -15,35 +15,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-FROM ubuntu
-RUN apt -y update
-RUN apt -y upgrade
-RUN apt -y install wget
-RUN apt -y install gcc
-RUN apt -y install g++
-RUN apt -y install cmake
-RUN apt -y install make
-RUN apt -y install bash
-RUN apt -y install zlib1g
-RUN apt -y install zlib1g-dev
-RUN apt -y install libxml2
-RUN apt -y install libxml2-dev
-RUN apt -y install libgsl-dev
-RUN apt -y install libncurses-dev
-RUN apt -y install git
-RUN apt -y install gdb
-RUN apt -y install cgdb
-RUN apt -y install valgrind
-RUN apt -y install vim
-RUN apt -y install pkg-config
-RUN apt -y install zip
-RUN apt -y install unzip
-RUN addgroup science
-RUN useradd -g science science
+FROM johnathanburchill/utils:cdev AS dev
 USER science
-WORKDIR /home/science/src
-VOLUME ["/home/science/src"]
 ENTRYPOINT ["/bin/bash"]
 
+FROM dev as build
+RUN git clone https://github.com/JohnathanBurchill/ReadSave
+RUN cd ReadSave
+RUN mkdir build
+RUN cd build
+RUN cmake ..
+RUN make 
 
+FROM alpine as deploy
+USER root
+COPY --from=build /home/science/ReadSave/build/readsave /usr/local/bin/.
+COPY --from=build /home/science/ReadSave/include/readsave.h /usr/local/include/.
+COPY --from=build /home/science/ReadSAve/build/libredsafe.a /usr/local/lib/.
+RUN ldconfig
+WORKDIR /home/science
+USER science
 
