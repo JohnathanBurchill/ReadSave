@@ -6,3 +6,7 @@
  ``docker run --rm -v `pwd`:/files johnathanburchill/readsav:latest files/filename.sav --variable-summary``
  
  Play with a [save file from the UCalgary Auroral Imaging Group](https://data.phys.ucalgary.ca/sort_by_project/THEMIS/asi/skymaps/rank/rank_20130107/themis_skymap_rank_20130107-%2B_vXX.sav).
+
+For example, with that file:
+
+``docker run --rm -v `pwd`:/files johnathanburchill/readsav:latest files/themis_skymap_rank_20130107-+_vXX.sav --variable-summary --variable=skymap``
