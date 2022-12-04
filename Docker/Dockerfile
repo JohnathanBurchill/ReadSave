@@ -30,11 +30,9 @@ RUN cmake ..
 RUN make 
 ENTRYPOINT ["/bin/bash"]
 
-FROM alpine as deploy
-USER root
-COPY --from=build /home/science/build/ReadSave/build/readsave /usr/local/bin/.
-COPY --from=build /home/science/build/ReadSave/include/readsave.h /usr/local/include/.
-COPY --from=build /home/science/build/ReadSave/build/libredsafe.a /usr/local/lib/.
-WORKDIR /root/
-ENTRYPOINT ["/bin/sh"]
+FROM scratch AS deploy
+COPY --from=build /home/science/build/ReadSave/build/readsave /.
+COPY --from=build /home/science/build/ReadSave/include/readsave.h /.
+COPY --from=build /home/science/build/ReadSave/build/libredsafe.a /.
+ENTRYPOINT ["/readsave"]
 
