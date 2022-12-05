@@ -6,6 +6,7 @@ example
 .ssh
 .viminfo
 .vscode-server
+.vscode
 
 # Prerequisites
 *.d
