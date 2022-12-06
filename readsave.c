@@ -1067,7 +1067,7 @@ Variable * variableData(Variable *variable, char *dottedTagName)
             if (!tag->isStructure)
                 return NULL;
             var = tag;
-            i = 0;
+            i = -1;
             nTags = var->structInfo.nTags;
         }
         
